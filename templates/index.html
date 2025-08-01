@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Beam Calculator - Input{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-ruler-combined me-2"></i>
+                    Beam Bending Analysis Calculator
+                </h3>
+                <p class="text-muted mb-0 mt-2">
+                    Enter beam properties and loads to calculate shear force, bending moment, and deflection diagrams
+                </p>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('calculate') }}" id="beamForm">
+                    
+                    <!-- Beam Properties Section -->
+                    <div class="section-header">
+                        <h5><i class="fas fa-cog me-2"></i>Beam Properties</h5>
+                        <hr>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="beam_length" class="form-label">
+                                <i class="fas fa-arrows-alt-h me-1"></i>Length (L)
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="beam_length" name="beam_length" 
+                                       step="0.1" min="0.1" value="5.0" required>
+                                <span class="input-group-text">m</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="young_modulus" class="form-label">
+                                <i class="fas fa-weight-hanging me-1"></i>Young's Modulus (E)
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="young_modulus" name="young_modulus" 
+                                       step="1000000" min="1000000" value="200000000000" required>
+                                <span class="input-group-text">Pa</span>
+                            </div>
+                            <div class="form-text">Steel: ~200 GPa, Aluminum: ~70 GPa, Concrete: ~30 GPa</div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="moment_inertia" class="form-label">
+                                <i class="fas fa-square me-1"></i>Moment of Inertia (I)
+                            </label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="moment_inertia" name="moment_inertia" 
+                                       step="0.000001" min="0.000001" value="0.001" required>
+                                <span class="input-group-text">m⁴</span>
+                            </div>
+                            <div class="form-text">For rectangular section: $I = \frac{bh^3}{12}$</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Support Type Section -->
+                    <div class="section-header mt-4">
+                        <h5><i class="fas fa-anchor me-2"></i>Support Type</h5>
+                        <hr>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="support_type" 
+                                       id="simply_supported" value="simply_supported" checked>
+                                <label class="form-check-label" for="simply_supported">
+                                    <strong>Simply Supported</strong>
+                                    <br><small class="text-muted">Pinned supports at both ends</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="support_type" 
+                                       id="cantilever" value="cantilever">
+                                <label class="form-check-label" for="cantilever">
+                                    <strong>Cantilever</strong>
+                                    <br><small class="text-muted">Fixed support at one end</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Loads Section -->
+                    <div class="section-header mt-4">
+                        <h5><i class="fas fa-arrow-down me-2"></i>Applied Loads</h5>
+                        <hr>
+                    </div>
+                    
+                    <div id="loads-container">
+                        <!-- Initial load input -->
+                        <div class="load-input-group border rounded p-3 mb-3">
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Load Type</label>
+                                    <select class="form-select load-type" name="load_type[]" required>
+                                        <option value="point">Point Load</option>
+                                        <option value="distributed">Distributed Load</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Magnitude</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="load_magnitude[]" 
+                                               step="0.1" value="1000" required>
+                                        <span class="input-group-text magnitude-unit">N</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Position</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="load_position[]" 
+                                               step="0.1" min="0" max="5" value="2.5" required>
+                                        <span class="input-group-text">m</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-2 mb-3 distributed-length" style="display: none;">
+                                    <label class="form-label">Length</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="load_length[]" 
+                                               step="0.1" min="0.1" value="1.0">
+                                        <span class="input-group-text">m</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-1 mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="button" class="btn btn-outline-danger d-block remove-load" 
+                                            onclick="removeLoad(this)" style="display: none;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <button type="button" class="btn btn-outline-primary" onclick="addLoad()">
+                            <i class="fas fa-plus me-2"></i>Add Another Load
+                        </button>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-calculator me-2"></i>
+                            Calculate Beam Analysis
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Help Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    How to Use This Calculator
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Beam Properties</h6>
+                        <ul class="small">
+                            <li><strong>Length:</strong> Total length of the beam</li>
+                            <li><strong>Young's Modulus:</strong> Material property (elastic modulus)</li>
+                            <li><strong>Moment of Inertia:</strong> Cross-sectional property</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Load Types</h6>
+                        <ul class="small">
+                            <li><strong>Point Load:</strong> Concentrated force at a specific location</li>
+                            <li><strong>Distributed Load:</strong> Load spread over a length of beam</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

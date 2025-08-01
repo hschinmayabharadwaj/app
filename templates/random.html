@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login / Signup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+    .box {
+      background: #fff;
+      padding: 2rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      width: 350px;
+      text-align: center;
+    }
+    input, button {
+      width: 100%;
+      box-sizing: border-box; /* Important for padding and width */
+      margin: 10px 0;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .toggle {
+      text-align: center;
+      color: blue;
+      cursor: pointer;
+      margin-top: 15px;
+    }
+    #msg {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    .msg-success {
+      color: green;
+    }
+    .msg-error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2 id="form-title">Login</h2>
+  <input type="text" id="name" placeholder="Name (for Signup)" style="display: none;">
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button onclick="submitForm()">Submit</button>
+  <p class="toggle" onclick="toggleForm()">Don't have an account? Sign Up</p>
+  <p id="msg"></p>
+</div>
+
+<script>
+  let isSignup = false;
+
+  function toggleForm() {
+    isSignup = !isSignup;
+    const msg = document.getElementById("msg");
+    msg.innerText = ""; // Clear any previous messages
+    
+    document.getElementById("form-title").innerText = isSignup ? "Signup" : "Login";
+    document.getElementById("name").style.display = isSignup ? "block" : "none";
+    document.querySelector(".toggle").innerText = isSignup ? "Already have an account? Login" : "Don't have an account? Sign Up";
+  }
+
+  async function submitForm() {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const msg = document.getElementById("msg");
+
+    if (!email || !password || (isSignup && !name)) {
+      msg.className = "msg-error";
+      msg.innerText = "Please fill out all required fields!";
+      return;
+    }
+
+    const data = {
+      action: isSignup ? "signup" : "login",
+      name: name,
+      email: email,
+      password: password
+    };
+
+    try {
+      const response = await fetch('/login', {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const result = await response.json();
+
+      if (result.success) {
+        msg.className = "msg-success";
+        msg.innerText = result.message + " Redirecting...";
+        // On success, redirect to the main calculator page
+        window.location.href = '/';
+      } else {
+        msg.className = "msg-error";
+        msg.innerText = result.message;
+      }
+    } catch (e) {
+      msg.className = "msg-error";
+      msg.innerText = "❌ Error connecting to the server. Please try again later.";
+      console.error("Fetch Error:", e);
+    }
+  }
+</script>
+
+</body>
+</html>

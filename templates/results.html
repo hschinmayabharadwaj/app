@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Beam Analysis Results{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Results Header -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Beam Analysis Results
+                </h3>
+                <p class="text-muted mb-0 mt-2">
+                    {{ support_type|title|replace('_', ' ') }} beam - Length: {{ "%.2f"|format(beam_length) }}m
+                </p>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="result-metric">
+                            <h5 class="text-danger">{{ "%.6f"|format(results.max_deflection) }}</h5>
+                            <small class="text-muted">Max Deflection (m)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="result-metric">
+                            <h5 class="text-warning">{{ "%.2f"|format(results.max_moment) }}</h5>
+                            <small class="text-muted">Max Moment (Nm)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="result-metric">
+                            <h5 class="text-info">{{ "%.2f"|format(results.max_shear) }}</h5>
+                            <small class="text-muted">Max Shear (N)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="result-metric">
+                            <h5 class="text-success">{{ "%.2e"|format(results.beam_properties.flexural_rigidity) }}</h5>
+                            <small class="text-muted">EI (Nm²)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Beam Diagram -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-eye me-2"></i>
+                    Beam Loading Diagram
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="data:image/png;base64,{{ plots.beam_diagram }}" 
+                     class="img-fluid" alt="Beam Loading Diagram">
+            </div>
+        </div>
+
+        <!-- Analysis Diagrams -->
+        <div class="row">
+            <!-- Shear Force Diagram -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-area me-2 text-primary"></i>
+                            Shear Force Diagram (SFD)
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="data:image/png;base64,{{ plots.shear_force }}" 
+                             class="img-fluid" alt="Shear Force Diagram">
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                The SFD shows internal shear forces along the beam length.
+                                Discontinuities occur at point load locations.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bending Moment Diagram -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2 text-danger"></i>
+                            Bending Moment Diagram (BMD)
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <img src="data:image/png;base64,{{ plots.bending_moment }}" 
+                             class="img-fluid" alt="Bending Moment Diagram">
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                The BMD shows internal bending moments. Maximum moments
+                                indicate critical stress locations.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deflection Curve -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-wave-square me-2 text-success"></i>
+                    Beam Deflection Curve
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="data:image/png;base64,{{ plots.deflection }}" 
+                     class="img-fluid" alt="Beam Deflection Curve">
+                <div class="mt-3">
+                    <small class="text-muted">
+                        The deflection curve shows beam deformation. Note: deflections may be 
+                        exaggerated for visualization purposes.
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Results -->
+        <div class="row">
+            <!-- Support Reactions -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-arrows-alt-v me-2"></i>
+                            Support Reactions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if support_type == 'cantilever' %}
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Vertical Reaction:</strong>
+                                </div>
+                                <div class="col-6">
+                                    {{ "%.2f"|format(results.reactions.R_y) }} N
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Fixed End Moment:</strong>
+                                </div>
+                                <div class="col-6">
+                                    {{ "%.2f"|format(results.reactions.M_fixed) }} Nm
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Left Reaction (R_A):</strong>
+                                </div>
+                                <div class="col-6">
+                                    {{ "%.2f"|format(results.reactions.R_A) }} N
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Right Reaction (R_B):</strong>
+                                </div>
+                                <div class="col-6">
+                                    {{ "%.2f"|format(results.reactions.R_B) }} N
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Applied Loads Summary -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-weight-hanging me-2"></i>
+                            Applied Loads Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if results.loads.point_loads %}
+                            <h6 class="text-danger">Point Loads:</h6>
+                            {% for magnitude, position in results.loads.point_loads %}
+                                <div class="small mb-1">
+                                    {{ "%.1f"|format(magnitude) }}N at {{ "%.2f"|format(position) }}m
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if results.loads.distributed_loads %}
+                            <h6 class="text-primary mt-3">Distributed Loads:</h6>
+                            {% for magnitude, start, end in results.loads.distributed_loads %}
+                                <div class="small mb-1">
+                                    {{ "%.1f"|format(magnitude) }}N/m from {{ "%.2f"|format(start) }}m to {{ "%.2f"|format(end) }}m
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card">
+            <div class="card-body text-center">
+                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    New Calculation
+                </a>
+                <button type="button" class="btn btn-outline-secondary ms-2" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>
+                    Print Results
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Make results page printer-friendly
+window.addEventListener('beforeprint', function() {
+    document.body.classList.add('printing');
+});
+
+window.addEventListener('afterprint', function() {
+    document.body.classList.remove('printing');
+});
+</script>
+{% endblock %}
