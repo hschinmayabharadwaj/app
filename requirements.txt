@@ -1,0 +1,9 @@
+Flask
+gspread
+google-auth-oauthlib
+werkzeug
+serverless-wsgi
+numpy
+scipy
+matplotlib
+netlify.toml
